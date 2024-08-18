@@ -10,75 +10,53 @@ Visualizer is a Web frontend to ParaView based on trame. The current project is 
 You can see it as an alpha version of what it could be. To make it fully functional we need more time and possibly funding.
 But rather than waiting for it to be ready to release it, we are putting it out there as it does provide some very good example of what can be done with ParaView and trame.
 
-If you would like us to push it forward or want some help creating something similar, feel free to reach out to `kitware <https://www.kitware.com/contact/>`_ so we can see how we can help you.
-
-|image_1| |image_2| |image_3|
-
-.. |image_1| image:: https://raw.githubusercontent.com/Kitware/paraview-visualizer/master/documentation/gallery/pv_visualizer_00.jpg
-  :width: 30%
-.. |image_2| image:: https://raw.githubusercontent.com/Kitware/paraview-visualizer/master/documentation/gallery/pv_visualizer_01.jpg
-  :width: 30%
-.. |image_3| image:: https://raw.githubusercontent.com/Kitware/paraview-visualizer/master/documentation/gallery/pv_visualizer_02.jpg
-  :width: 30%
-
-
 License
 -------
 
 This software is distributed under a BSD-3 license
 
-
-Installing for Development
---------------------------
-
-Build and install the Vue components
-
-.. code-block:: console
-
-    export NODE_OPTIONS=--openssl-legacy-provider
-    cd vue-components
-    npm i
-    npm run build
-    cd -
-
-Create a virtual environment to use with your `ParaView 5.10+ <https://www.paraview.org/download/>`_
-
-.. code-block:: console
-
-    python3.9 -m venv .venv
-    source .venv/bin/activate
-    python -m pip install -U pip
-    pip install -e .
-
-Installing from release
+Requirements 
 -----------------------
+- Ubuntu 24.04 LTS
+- nvm 
+- git 
+- npm 18
 
-Create a virtual environment to use with your `ParaView 5.10+ <https://www.paraview.org/download/>`_
+Installing Miniconda
+-----------------------
+.. code-block:: console
+	
+	mkdir -p ~/miniconda3
+	wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
+	bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
+	rm -rf ~/miniconda3/miniconda.sh
 
+	~/miniconda3/bin/conda init bash
+	~/miniconda3/bin/conda init zsh
+
+Creating the environment
+-----------------------
 .. code-block:: console
 
-    python3.9 -m venv .venv
-    source .venv/bin/activate
-    python -m pip install -U pip pv-visualizer
+	conda create -n pv-env -c conda-forge python=3.10 trame trame-vtk trame-vuetify trame-components trame-simput
+	conda activate pv-env
+	conda install -c conda-forge paraview=5.12.1=py310hc2031ef_4_egl
+	
+
+	git clone https://github.com/Kitware/paraview-visualizer.git
+	cd paraview-visualizer
+	export NODE_OPTIONS=--openssl-legacy-provider
+	cd vue-components
+	npm i
+	npm run build
+	cd -
+
 
 Running the application
 -----------------------
-
-Run the application using `ParaView: pvpython <https://www.paraview.org/>`_ executable
-
 .. code-block:: console
 
-    export PVPYTHON=/Applications/ParaView-5.10.0.app/Contents/bin/pvpython # Using macOS install path as example
-    export PV_VENV=$PWD/.venv
-    export TRAME_APP=pv_visualizer.app
-
-    $PVPYTHON -m paraview.apps.trame --data ~
-
-Or you can use command line arguments instead of environment variables
-
-.. code-block:: console
-
-    $PVPYTHON -m paraview.apps.trame \
-        --venv $PWD/.venv \
-        --trame-app pv_visualizer.app \
-        --data ~
+	# Dein Pfad zum Verzeichnis wo pvpython enthalten ist.
+	export PVPYTHON=/home/pierre-louis-bonvin/miniconda3/envs/pv-env/bin/pvpython 
+	export TRAME_APP=pv_visualizer.app
+	$PVPYTHON -m paraview.apps.trame --data ~
