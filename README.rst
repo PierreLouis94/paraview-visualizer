@@ -43,7 +43,7 @@ Creating the environment
 	conda install -c conda-forge paraview=5.12.1=py310hc2031ef_4_egl
 	
 
-	git clone https://github.com/Kitware/paraview-visualizer.git
+	git clone https://github.com/PierreLouis94/paraview-visualizer.git
 	cd paraview-visualizer
 	export NODE_OPTIONS=--openssl-legacy-provider
 	cd vue-components
