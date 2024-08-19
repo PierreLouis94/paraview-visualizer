@@ -59,4 +59,4 @@ Running the application
 	# Dein Pfad zum Verzeichnis wo pvpython enthalten ist.
 	export PVPYTHON=/home/pierre-louis-bonvin/miniconda3/envs/pv-env/bin/pvpython 
 	export TRAME_APP=pv_visualizer.app
-	$PVPYTHON -m paraview.apps.trame --data ~
+	$PVPYTHON -m paraview.apps.trame --data /home/pierre/Data/
