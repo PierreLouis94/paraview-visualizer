@@ -2,7 +2,6 @@ from trame.widgets import vuetify
 
 STYLE = {"small": True, "icon": True}
 
-
 def create_view_toolbox(server):
     ctrl = server.controller
     with vuetify.VCard(
@@ -12,7 +11,9 @@ def create_view_toolbox(server):
     ):
         with vuetify.VBtn(**STYLE, click=ctrl.view_reset_camera):
             vuetify.VIcon("mdi-crop-free")
+        # Add button to toggle second view
         with vuetify.VBtn(
             **STYLE,
+            click="view2_active = !view2_active",
         ):
-            vuetify.VIcon("mdi-camera-plus", small=True)
+            vuetify.VIcon("mdi-arrow-split-vertical")

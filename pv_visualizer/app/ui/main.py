@@ -163,13 +163,6 @@ def initialize(server):
                     with vuetify.VBtn(value=item.NAME, **COMPACT):
                         vuetify.VIcon(item.ICON, **item.ICON_STYLE)
 
-            # Add button to toggle second view
-            with vuetify.VBtn(
-                icon=True,
-                click="view2_active = !view2_active",
-                **COMPACT,
-            ):
-                vuetify.VIcon("mdi-eye")
 
             # Add button to toggle lock status
             with vuetify.VBtn(
