@@ -1,13 +1,22 @@
 from pathlib import Path
 import os
-import simple
+from paraview import simple
 
 # Initialize views
 view1 = None
 view2 = None
 
+# Define NAME attribute
+NAME = "Files"
+
 def add_prefix(file_path):
     return str(Path(os.path.join(args.data, file_path)).absolute())
+
+def initialize(server):
+    global view1, view2
+    view1 = None
+    view2 = None
+    # Any other initialization logic can go here
 
 def load_file(files):
     global view1, view2
