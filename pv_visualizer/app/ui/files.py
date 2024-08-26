@@ -1,87 +1,72 @@
-import os
 from pathlib import Path
+import os
+import simple
 
-from pv_visualizer.html.file_browser import ParaViewFileBrowser
-from .pipeline import NAME as pipeline_name
+# Initialize views
+view1 = None
+view2 = None
 
-from paraview import simple
+def add_prefix(file_path):
+    return str(Path(os.path.join(args.data, file_path)).absolute())
 
-# -----------------------------------------------------------------------------
-# UI module
-# -----------------------------------------------------------------------------
+def load_file(files):
+    global view1, view2
+    active_change = False
 
-NAME = "files"
-ICON = "mdi-file-document-outline"
-ICON_STYLE = {}
+    if view1 is None:
+        view1 = simple.CreateRenderView()
+        simple.SetActiveView(view1)
 
-# -----------------------------------------------------------------------------
-# Init
-# -----------------------------------------------------------------------------
-
-
-def initialize(server):
-    state, ctrl = server.state, server.controller
-    args, _ = server.cli.parse_known_args()
-
-    def add_prefix(file_path):
-        return str(Path(os.path.join(args.data, file_path)).absolute())
-
-    def load_file(files):
-        active_change = False
-        if isinstance(files, list):
-            # time series
-            files_to_load = map(add_prefix, files)
-            reader = simple.OpenDataFile(files_to_load)
-            simple.Show(reader)  # Should be deferred
-        elif files.endswith(".pvsm"):
-            # state file
-            simple.Render()
-            state_to_load = add_prefix(files)
-            if state.settings_use_relative_path:
-                simple.LoadState(
-                    state_to_load,
-                    data_directory=str(Path(state_to_load).parent.resolve().absolute()),
-                    restrict_to_data_directory=True,
-                )
-            else:
-                simple.LoadState(state_to_load)
-
-            view = simple.GetActiveView()
-            view.MakeRenderWindowInteractor(True)
-            ctrl.view_replace(view)
-            active_change = True
+    if isinstance(files, list):
+        # time series
+        files_to_load = map(add_prefix, files)
+        reader = simple.OpenDataFile(files_to_load)
+        simple.Show(reader, view1)  # Should be deferred
+    elif files.endswith(".pvsm"):
+        # state file
+        simple.Render()
+        state_to_load = add_prefix(files)
+        if state.settings_use_relative_path:
+            simple.LoadState(
+                state_to_load,
+                data_directory=str(Path(state_to_load).parent.resolve().absolute()),
+                restrict_to_data_directory=True,
+            )
         else:
-            # data file
-            data_to_load = add_prefix(files)
-            reader = simple.OpenDataFile(data_to_load)
-            simple.Show(reader)  # Should be deferred
+            simple.LoadState(state_to_load)
 
-        # Update state
-        state.active_controls = pipeline_name
+        view = simple.GetActiveView()
+        view.MakeRenderWindowInteractor(True)
+        ctrl.view_replace(view)
+        active_change = True
+    else:
+        # data file
+        data_to_load = add_prefix(files)
+        reader = simple.OpenDataFile(data_to_load)
 
-        # Use life cycle handler
-        ctrl.on_data_change(reset_camera=True)
-        if active_change:
-            ctrl.on_active_proxy_change()
+        if view2 is None:
+            # Prompt user to choose view
+            choice = input("Load data in view 1 or view 2? (1/2): ")
+            if choice == "2":
+                view2 = simple.CreateRenderView()
+                simple.SetActiveView(view2)
+                simple.Show(reader, view2)
+            else:
+                simple.Show(reader, view1)
+        else:
+            # Prompt user to choose view
+            choice = input("Load data in view 1 or view 2? (1/2): ")
+            if choice == "2":
+                simple.SetActiveView(view2)
+                simple.Show(reader, view2)
+            else:
+                simple.SetActiveView(view1)
+                simple.Show(reader, view1)
 
-    # -----------------------------------------------------------------------------
-    # Update controller
-    # -----------------------------------------------------------------------------
+    # Update state
+    state.active_controls = pipeline_name
 
-    ctrl.files_load_file = load_file
-
-
-# -----------------------------------------------------------------------------
-# Panel
-# -----------------------------------------------------------------------------
-
-
-def create_panel(server):
-    args, _ = server.cli.parse_known_args()
-    ctrl = server.controller
-    ParaViewFileBrowser(
-        args.data,
-        on_load_file=ctrl.files_load_file,
-        query=("search", ""),
-        v_if=(f"active_controls == '{NAME}'",),
-    )
+    # Use life cycle handler
+    ctrl.on_data_change(reset_camera=True)
+    if active_change:
+        ctrl.on_active_proxy_change()
