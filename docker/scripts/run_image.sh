@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-docker run --rm --gpus all -p 8080:80 \
-    -v "$HOME:/data" \
-    -d \
+DATA_DIR=/home/pierre/Data
+docker run -it --rm -p 8080:80 \
+    -v "$DATA_DIR:/data" \
     pv-visualizer
