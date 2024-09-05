@@ -1,6 +1,6 @@
 from trame.app import dev
 from trame.ui.vuetify import SinglePageWithDrawerLayout
-from trame.widgets import vuetify, paraview, simput, html
+from trame.widgets import vuetify, paraview, simput, html, vtk_widgets
 
 from trame_simput import get_simput_manager
 
@@ -65,48 +65,14 @@ def initialize(server):
     # state
     state.trame__title = "Visualizer"
     state.trame__favicon = asset_manager.icon
-    state.view2_active = False  # Start with the second view inactive
-    state.views_locked = True  # Start with the views locked
+
+    state.view_names = ["view1", "view2"]
+    state.active_view = "view1"
 
     # controller
     ctrl.on_server_reload.add(_reload)
     ctrl.on_data_change.add(ctrl.view_update)
     ctrl.on_data_change.add(ctrl.pipeline_update)
-
-    # Define the view_update function using @ctrl.set
-    @ctrl.set("view_update")
-    def view_update(reset_camera=False):
-        if state.views_locked:
-            if state.view2_active:
-                ctrl.view_update_2()
-                if reset_camera:
-                    ctrl.view_reset_camera_2()
-            ctrl.view_update_1()
-            if reset_camera:
-                ctrl.view_reset_camera_1()
-        else:
-            if state.view2_active:
-                ctrl.view_update_2()
-                if reset_camera:
-                    ctrl.view_reset_camera_2()
-            ctrl.view_update_1()
-            if reset_camera:
-                ctrl.view_reset_camera_1()
-
-    # Define the function to synchronize camera positions
-    def synchronize_cameras():
-        if state.views_locked and state.view2_active:
-            view1 = simple.GetRenderView()
-            view2 = simple.GetRenderView()
-            if view1 and view2:
-                view2.CameraPosition = view1.CameraPosition
-                view2.CameraFocalPoint = view1.CameraFocalPoint
-                view2.CameraViewUp = view1.CameraViewUp
-                view2.CameraParallelScale = view1.CameraParallelScale
-
-    # Add the synchronize_cameras function to the view update functions
-    ctrl.view_update_1.add(lambda *args, **kwargs: synchronize_cameras())
-    ctrl.view_update_2.add(lambda *args, **kwargs: synchronize_cameras())
 
     # Init other components
     state_change.initialize(server)
@@ -131,7 +97,7 @@ def initialize(server):
         # -----------------------------------------------------------------------------
         # Toolbar
         # -----------------------------------------------------------------------------
-        layout.title.set_text("Visualizer")
+        layout.title.set_text("MTU Visualizer")
 
         with layout.icon as icon:
             html.Img(src=asset_manager.icon, height=40)
@@ -163,16 +129,6 @@ def initialize(server):
                     with vuetify.VBtn(value=item.NAME, **COMPACT):
                         vuetify.VIcon(item.ICON, **item.ICON_STYLE)
 
-
-            # Add button to toggle lock status
-            with vuetify.VBtn(
-                icon=True,
-                click="views_locked = !views_locked",
-                **COMPACT,
-            ):
-                vuetify.VIcon("mdi-lock", v_if=("views_locked",))
-                vuetify.VIcon("mdi-lock-open", v_if=("!views_locked",))
-
         # -----------------------------------------------------------------------------
         # Drawer
         # -----------------------------------------------------------------------------
@@ -186,40 +142,28 @@ def initialize(server):
         # Main content
         # -----------------------------------------------------------------------------
         with layout.content:
-            with vuetify.VContainer(fluid=True, classes="fill-height pa-0 ma-0", style="display: flex; flex-direction: row;"):
-                with vuetify.VContainer(fluid=True, classes="fill-height pa-0 ma-0", style="flex: 1; border-right: 2px solid #ccc;"):
-                    view_toolbox.create_view_toolbox(server)
-                    html_view_1 = paraview.VtkRemoteLocalView(
-                        simple.GetRenderView() if simple else None,
-                        interactive_ratio=("view_interactive_ratio", 1),
-                        interactive_quality=("view_interactive_quality", 70),
-                        mode="remote",
-                        namespace="view1",
-                        style="width: 100%; height: 100%;",
-                    )
-                    ctrl.view_replace_1 = html_view_1.replace_view
-                    ctrl.view_update_1 = html_view_1.update
-                    ctrl.view_reset_camera_1 = html_view_1.reset_camera
-                    ctrl.on_server_ready.add(ctrl.view_update_1)
-
-                with vuetify.VContainer(
-                    v_if=("view2_active",),
-                    fluid=True,
-                    classes="fill-height pa-0 ma-0",
-                    style="flex: 1;",
-                ):
-                    html_view_2 = paraview.VtkRemoteLocalView(
-                        simple.GetRenderView() if simple else None,
-                        interactive_ratio=("view_interactive_ratio", 1),
-                        interactive_quality=("view_interactive_quality", 70),
-                        mode="remote",
-                        namespace="view2",
-                        style="width: 100%; height: 100%;",
-                    )
-                    ctrl.view_replace_2 = html_view_2.replace_view
-                    ctrl.view_update_2 = html_view_2.update
-                    ctrl.view_reset_camera_2 = html_view_2.reset_camera
-                    ctrl.on_server_ready.add(ctrl.view_update_2)
+            with vuetify.VContainer(
+                fluid=True, 
+                classes="fill-height pa-0 ma-0",
+                style="display: grid; grid-template-columns: 1fr 1fr;"
+            ):
+                for c in state.view_names:
+                    with html.Div(
+                        style="height: 100%;justify-self: stretch;",
+                        click=f"active_view = '{c}'",
+                    ):
+                        view_toolbox.create_view_toolbox(server)
+                        render_window = simple.GetRenderView() if simple else None
+                        html_view = vtk_widgets.VtkLocalView(
+                            render_window,
+                            interactive_ratio=("view_interactive_ratio", 1),
+                            interactive_quality=("view_interactive_quality", 70),
+                            style="width: 100%; height: 100%;",
+                        )
+                        ctrl[f"view_{c}_replace"] = html_view.replace_view
+                        ctrl[f"view_{c}_update"] = html_view.update
+                        ctrl[f"view_{c}_reset"] = html_view.reset_camera
+                        ctrl.on_server_ready.add(ctrl[f"view_{c}_update"])
 
         # -----------------------------------------------------------------------------
         # Footer

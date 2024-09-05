@@ -12,8 +12,5 @@ def create_view_toolbox(server):
         with vuetify.VBtn(**STYLE, click=ctrl.view_reset_camera):
             vuetify.VIcon("mdi-crop-free")
         # Add button to toggle second view
-        with vuetify.VBtn(
-            **STYLE,
-            click="view2_active = !view2_active",
-        ):
+        with vuetify.VBtn(**STYLE, click=ctrl.split_view):
             vuetify.VIcon("mdi-arrow-split-vertical")
