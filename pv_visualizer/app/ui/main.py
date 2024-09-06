@@ -1,6 +1,6 @@
 from trame.app import dev
 from trame.ui.vuetify import SinglePageWithDrawerLayout
-from trame.widgets import vuetify, paraview, simput, html, vtk_widgets
+from trame.widgets import vuetify, paraview, simput, html
 
 from trame_simput import get_simput_manager
 
@@ -66,9 +66,6 @@ def initialize(server):
     state.trame__title = "Visualizer"
     state.trame__favicon = asset_manager.icon
 
-    state.view_names = ["view1", "view2"]
-    state.active_view = "view1"
-
     # controller
     ctrl.on_server_reload.add(_reload)
     ctrl.on_data_change.add(ctrl.view_update)
@@ -97,7 +94,7 @@ def initialize(server):
         # -----------------------------------------------------------------------------
         # Toolbar
         # -----------------------------------------------------------------------------
-        layout.title.set_text("MTU Visualizer")
+        layout.title.set_text("Visualizer")
 
         with layout.icon as icon:
             html.Img(src=asset_manager.icon, height=40)
@@ -129,7 +126,7 @@ def initialize(server):
                     with vuetify.VBtn(value=item.NAME, **COMPACT):
                         vuetify.VIcon(item.ICON, **item.ICON_STYLE)
 
-        # -----------------------------------------------------------------------------
+        # -----------------------------------------------------------------------------=
         # Drawer
         # -----------------------------------------------------------------------------
         with layout.drawer as dr:
@@ -142,28 +139,20 @@ def initialize(server):
         # Main content
         # -----------------------------------------------------------------------------
         with layout.content:
-            with vuetify.VContainer(
-                fluid=True, 
-                classes="fill-height pa-0 ma-0",
-                style="display: grid; grid-template-columns: 1fr 1fr;"
-            ):
-                for c in state.view_names:
-                    with html.Div(
-                        style="height: 100%;justify-self: stretch;",
-                        click=f"active_view = '{c}'",
-                    ):
-                        view_toolbox.create_view_toolbox(server)
-                        render_window = simple.GetRenderView() if simple else None
-                        html_view = vtk_widgets.VtkLocalView(
-                            render_window,
-                            interactive_ratio=("view_interactive_ratio", 1),
-                            interactive_quality=("view_interactive_quality", 70),
-                            style="width: 100%; height: 100%;",
-                        )
-                        ctrl[f"view_{c}_replace"] = html_view.replace_view
-                        ctrl[f"view_{c}_update"] = html_view.update
-                        ctrl[f"view_{c}_reset"] = html_view.reset_camera
-                        ctrl.on_server_ready.add(ctrl[f"view_{c}_update"])
+            with vuetify.VContainer(fluid=True, classes="fill-height pa-0 ma-0"):
+                view_toolbox.create_view_toolbox(server)
+                html_view = paraview.VtkRemoteLocalView(
+                    simple.GetRenderView() if simple else None,
+                    interactive_ratio=("view_interactive_ratio", 1),
+                    interactive_quality=("view_interactive_quality", 70),
+                    mode="remote",
+                    namespace="view",
+                    style="width: 100%; height: 100%;",
+                )
+                ctrl.view_replace = html_view.replace_view
+                ctrl.view_update = html_view.update
+                ctrl.view_reset_camera = html_view.reset_camera
+                ctrl.on_server_ready.add(ctrl.view_update)
 
         # -----------------------------------------------------------------------------
         # Footer
