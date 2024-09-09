@@ -1,2 +1,8 @@
 # Use published version instead of local-app from initialize.sh
 # pv-visualizer
+trame
+trame-vtk
+trame-vuetify
+trame-components 
+trame-simput
+
