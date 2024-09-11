@@ -63,8 +63,10 @@ def initialize(server):
     state, ctrl = server.state, server.controller
 
     # state
-    state.trame__title = "Visualizer"
+    state.trame__title = "MTU Visualizer"
     state.trame__favicon = asset_manager.icon
+    state.view_names = ["view1", "view2"]
+    state.active_view = "view1"
 
     # controller
     ctrl.on_server_reload.add(_reload)
@@ -88,6 +90,12 @@ def initialize(server):
     ctrl.pxm_apply = simput_widget.apply
     ctrl.pxm_reset = simput_widget.reset
 
+    def changeActiveView():
+        if state.active_view  == "view1":
+            state.active_view  = "view2"
+        else:
+            state.active_view = "view1"
+
     with SinglePageWithDrawerLayout(server, show_drawer=True, width=300) as layout:
         layout.root = simput_widget
 
@@ -103,6 +111,18 @@ def initialize(server):
         with layout.toolbar as tb:
             tb.dense = True
             tb.clipped_right = True
+            vuetify.VSpacer()
+
+            with vuetify.VBtn(click=changeActiveView, icon=True):
+                vuetify.VIcon("mdi-swap-horizontal")
+            vuetify.VTextField(
+                v_model=("active_view ",),
+                readonly=True,
+                dense=True,
+                hide_details=True,
+                outlined=True,
+                style="max-width: 67px;",
+            )
             vuetify.VSpacer()
             vuetify.VTextField(
                 v_show=("!!active_controls",),
@@ -125,12 +145,14 @@ def initialize(server):
                 for item in CONTROLS:
                     with vuetify.VBtn(value=item.NAME, **COMPACT):
                         vuetify.VIcon(item.ICON, **item.ICON_STYLE)
+            
+            
 
         # -----------------------------------------------------------------------------=
         # Drawer
         # -----------------------------------------------------------------------------
         with layout.drawer as dr:
-            dr.right = True
+            dr.left = True
             # dr.expand_on_hover = True
             for item in CONTROLS:
                 item.create_panel(server)
@@ -153,6 +175,7 @@ def initialize(server):
                 ctrl.view_update = html_view.update
                 ctrl.view_reset_camera = html_view.reset_camera
                 ctrl.on_server_ready.add(ctrl.view_update)
+        
 
         # -----------------------------------------------------------------------------
         # Footer
