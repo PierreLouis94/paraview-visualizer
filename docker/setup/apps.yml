@@ -6,7 +6,7 @@ trame: # Default app under /index.html
     - -m
     - paraview.apps.trame
     - --trame-app
-    - pv_visualizer
+    - pv_visualizer.app
     - --data
     - /data
     - --host
@@ -22,7 +22,7 @@ Visualizer: # /Visualizer.html or /?name=Visualizer&data=...
     - -m
     - paraview.apps.trame
     - --trame-app
-    - pv_visualizer
+    - pv_visualizer.app
     - --data
     - ${data} # <-- come from url(data=...)
     - --host
