@@ -32,7 +32,7 @@ def initialize(server):
             # time series
             files_to_load = map(add_prefix, files)
             reader = simple.OpenDataFile(files_to_load)
-            simple.Show(reader)  # Should be deferred
+            simple.Show(reader, view= simple.GetActiveView())   # Load into the active view
         elif files.endswith(".pvsm"):
             # state file
             simple.Render()
@@ -54,7 +54,7 @@ def initialize(server):
             # data file
             data_to_load = add_prefix(files)
             reader = simple.OpenDataFile(data_to_load)
-            simple.Show(reader)  # Should be deferred
+            simple.Show(reader, view = simple.GetActiveView())  # Load into the active view
 
         # Update state
         state.active_controls = pipeline_name

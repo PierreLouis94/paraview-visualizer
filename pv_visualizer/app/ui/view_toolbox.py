@@ -12,7 +12,4 @@ def create_view_toolbox(server):
     ):
         with vuetify.VBtn(**STYLE, click=ctrl.view_reset_camera):
             vuetify.VIcon("mdi-crop-free")
-        with vuetify.VBtn(
-            **STYLE,
-        ):
-            vuetify.VIcon("mdi-camera-plus", small=True)
+        
