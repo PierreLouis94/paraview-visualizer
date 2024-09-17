@@ -58,6 +58,7 @@ LIFE_CYCLES = [
 # Layout
 # -----------------------------------------------------------------------------
 
+synchronization_enabled = False
 
 def initialize(server):
     state, ctrl = server.state, server.controller
@@ -73,7 +74,7 @@ def initialize(server):
     state.active_view = "view1"
     state.current_view = view1 
     state.show_second_view = False  # Initial state: Only one view is visible
- 
+    state.sync_status = "Unlocked"
 
     # controller
     ctrl.on_server_reload.add(_reload)
@@ -98,6 +99,17 @@ def initialize(server):
     ctrl.pxm_apply = simput_widget.apply
     ctrl.pxm_reset = simput_widget.reset
 
+    def force_render(view):
+        def decorator(func):
+            def wrapper(*args, **kwargs):
+                result = func(*args, **kwargs)
+                view.Render()
+                simple.Render(view)
+                return result
+            return wrapper
+        return decorator
+    
+
     def change_active_view():
         if state.active_view  == "view1":
             state.active_view  = "view2"
@@ -114,6 +126,40 @@ def initialize(server):
         simple.SetActiveView(state.current_view)
         ctrl.view_update()
 
+    @force_render(view1)
+    def reset_camera_view():
+        camera = view1.GetActiveCamera()
+        camera.SetPosition(1000, 0, 1000)
+        camera.SetFocalPoint(0, 0, 0)
+        camera.SetViewUp(0, 1, 0)
+
+    def synchronize_cameras():
+        camera1 = view1.GetActiveCamera()
+        camera2 = view2.GetActiveCamera()
+        
+        camera2.SetPosition(camera1.GetPosition())
+        camera2.SetFocalPoint(camera1.GetFocalPoint())
+        camera2.SetViewUp(camera1.GetViewUp())
+        camera2.SetViewAngle(camera1.GetViewAngle())
+        
+        view2.Render()
+        simple.Render(view2)
+
+    def toggle_synchronization():
+        global synchronization_enabled
+        synchronization_enabled = not synchronization_enabled
+        
+        if synchronization_enabled:
+            synchronize_cameras()
+            # Add a callback to synchronize cameras whenever view1's camera changes
+            view1.GetActiveCamera().AddObserver("ModifiedEvent", lambda obj, event: synchronize_cameras())
+            state.sync_status = "Locked"
+        else:
+            # Remove the observer if synchronization is disabled
+            view1.GetActiveCamera().RemoveObservers("ModifiedEvent")
+            state.sync_status = "Unlocked"
+
+
     # Ensure the active view is updated
     ctrl.change_active_view = change_active_view
     ctrl.update_active_view = update_active_view
@@ -124,7 +170,7 @@ def initialize(server):
         # -----------------------------------------------------------------------------
         # Toolbar
         # -----------------------------------------------------------------------------
-        layout.title.set_text("Visualizer")
+        layout.title.set_text("MTU Visualizer")
 
         with layout.icon as icon:
             html.Img(src=asset_manager.icon, height=40)
@@ -161,8 +207,28 @@ def initialize(server):
                 prepend_inner_icon="mdi-magnify",
                 style="max-width: 30vw;",
                 **COMPACT,
-            )
+            ) 
+
             vuetify.VSpacer()
+
+            # Attach the function to a button click event
+            with vuetify.VBtn(click=reset_camera_view, icon=True):
+                vuetify.VIcon("mdi-camera-retake")
+
+            with vuetify.VBtn(click=toggle_synchronization, icon=True):
+                vuetify.VIcon("mdi-sync")
+                        # Text field to display the synchronization status
+            vuetify.VTextField(
+                v_model=("sync_status",),
+                readonly=True,
+                dense=True,
+                hide_details=True,
+                outlined=True,
+                style="max-width: 100px;",
+            )
+
+            vuetify.VSpacer()
+
             with vuetify.VBtnToggle(
                 v_model=("active_controls", "files"),
                 **COMPACT,
@@ -192,21 +258,22 @@ def initialize(server):
                 view_toolbox.create_view_toolbox(server)
 
                 
-                with html.Div(style=f"width: 50%; height: 100%; float: left;"):
+                with html.Div(style="flex: 1; height: 100%; border-right: 2px solid #ddd;"):  # border between views
                     html_view = paraview.VtkRemoteLocalView(
                         view1,
                         interactive_ratio=("view1_interactive_ratio", 1),
                         interactive_quality=("view1_interactive_quality", 70),
                         mode="remote",
                         namespace="view1",
-                        style="width: 100%; height: 100%;",
+                        style="flex: 1%; height: 100%;",
                     )
                     ctrl.view_replace = html_view.replace_view
                     ctrl.view_update = html_view.update
                     ctrl.view_reset_camera = html_view.reset_camera
-                    
+                        
 
-                with html.Div(v_show=("show_second_view",), style="width: 50%; height: 100%; float: right;"):
+
+                with html.Div(v_show=("show_second_view",), style="flex: 1; height: 100%;"):    
                     html_view = paraview.VtkRemoteLocalView(
                         view2,
                         interactive_ratio=("view2_interactive_ratio", 1),
