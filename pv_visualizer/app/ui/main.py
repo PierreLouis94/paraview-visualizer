@@ -70,11 +70,13 @@ def initialize(server):
     # state
     state.trame__title = "MTU Visualizer"
     state.trame__favicon = asset_manager.icon
-    state.view_names = ["view1", "view2"]
+
+    
     state.active_view = "view1"
     state.current_view = view1 
     state.show_second_view = False  # Initial state: Only one view is visible
-    state.sync_status = "Unlocked"
+    state.sync_status = "unlocked"
+
 
     # controller
     ctrl.on_server_reload.add(_reload)
@@ -126,41 +128,52 @@ def initialize(server):
         simple.SetActiveView(state.current_view)
         ctrl.view_update()
 
-    @force_render(view1)
-    def reset_camera_view():
+    #@force_render(view1)
+    def reset_camera_view1():
         camera = view1.GetActiveCamera()
         camera.SetPosition(1000, 0, 1000)
         camera.SetFocalPoint(0, 0, 0)
         camera.SetViewUp(0, 1, 0)
 
+    def reset_camera_view2():
+        camera = view2.GetActiveCamera()
+        camera.SetPosition(1000, 0, 1000)
+        camera.SetFocalPoint(0, 0, 0)
+        camera.SetViewUp(0, 1, 0)
+
     def synchronize_cameras():
-        camera1 = view1.GetActiveCamera()
-        camera2 = view2.GetActiveCamera()
-        
-        camera2.SetPosition(camera1.GetPosition())
-        camera2.SetFocalPoint(camera1.GetFocalPoint())
-        camera2.SetViewUp(camera1.GetViewUp())
-        camera2.SetViewAngle(camera1.GetViewAngle())
+        if state.sync_status == "locked":
+            camera1 = view1.GetActiveCamera()
+            camera2 = view2.GetActiveCamera()
+            
+            camera2.SetPosition(camera1.GetPosition())
+            camera2.SetFocalPoint(camera1.GetFocalPoint())
+            camera2.SetViewUp(camera1.GetViewUp())
+            camera2.SetViewAngle(camera1.GetViewAngle())
+        else:
+            pass
         
         view2.Render()
         simple.Render(view2)
 
-    def toggle_synchronization():
-        global synchronization_enabled
-        synchronization_enabled = not synchronization_enabled
+    def change_sync_status():
         
-        if synchronization_enabled:
-            synchronize_cameras()
-            # Add a callback to synchronize cameras whenever view1's camera changes
-            view1.GetActiveCamera().AddObserver("ModifiedEvent", lambda obj, event: synchronize_cameras())
-            state.sync_status = "Locked"
+        if state.sync_status == "unlocked":
+            state.sync_status = "locked"
         else:
-            # Remove the observer if synchronization is disabled
-            view1.GetActiveCamera().RemoveObservers("ModifiedEvent")
-            state.sync_status = "Unlocked"
+            state.sync_status = "unlocked"
+            
+            
+
+        # Ensure the state change is flushed to update the UI
+        state.dirty("sync_status")
+        state.flush()
 
 
     # Ensure the active view is updated
+    ctrl.reset_camera_view1 = reset_camera_view1
+    ctrl.reset_camera_view2 = reset_camera_view2
+    ctrl.change_sync_status = change_sync_status
     ctrl.change_active_view = change_active_view
     ctrl.update_active_view = update_active_view
 
@@ -181,10 +194,10 @@ def initialize(server):
             tb.clipped_right = True
             vuetify.VSpacer()
 
-            # Add a button to show/hide the second view
-            with vuetify.VBtn(click=toggle_second_view, icon=False):
-                vuetify.VIcon("mdi-plus")
+            with vuetify.VBtn(click=toggle_second_view, icon=True):
+                vuetify.VIcon("mdi-arrow-split-vertical")
                 
+            vuetify.VSpacer()
 
             with vuetify.VBtn(click=change_active_view, icon=True):
                 vuetify.VIcon("mdi-swap-horizontal")
@@ -212,12 +225,16 @@ def initialize(server):
             vuetify.VSpacer()
 
             # Attach the function to a button click event
-            with vuetify.VBtn(click=reset_camera_view, icon=True):
-                vuetify.VIcon("mdi-camera-retake")
+            with vuetify.VBtn(click=reset_camera_view1, icon=True):
+                vuetify.VIcon("mdi-numeric-1-box-outline")
 
-            with vuetify.VBtn(click=toggle_synchronization, icon=True):
-                vuetify.VIcon("mdi-sync")
-                        # Text field to display the synchronization status
+            # Attach the function to a button click event
+            with vuetify.VBtn(click=reset_camera_view2, icon=True):
+                vuetify.VIcon("mdi-numeric-2-box-outline")
+
+            with vuetify.VBtn(click=change_sync_status, icon=True):
+                vuetify.VIcon("mdi-lock")
+
             vuetify.VTextField(
                 v_model=("sync_status",),
                 readonly=True,
@@ -226,6 +243,9 @@ def initialize(server):
                 outlined=True,
                 style="max-width: 100px;",
             )
+
+            with vuetify.VBtn(click=synchronize_cameras, icon=True):
+                vuetify.VIcon("mdi-sync")
 
             vuetify.VSpacer()
 
