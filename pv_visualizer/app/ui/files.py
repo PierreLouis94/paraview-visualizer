@@ -56,6 +56,9 @@ def initialize(server):
             reader = simple.OpenDataFile(data_to_load)
             simple.Show(reader, view = simple.GetActiveView())  # Load into the active view
 
+        # Force a render in the active view after loading
+        simple.Render(simple.GetActiveView())
+
         # Update state
         state.active_controls = pipeline_name
 
@@ -63,6 +66,9 @@ def initialize(server):
         ctrl.on_data_change(reset_camera=True)
         if active_change:
             ctrl.on_active_proxy_change()
+
+        # Manually flush state to ensure immediate UI update
+        state.flush()
 
     # -----------------------------------------------------------------------------
     # Update controller

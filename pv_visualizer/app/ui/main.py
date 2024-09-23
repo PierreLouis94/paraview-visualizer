@@ -135,11 +135,21 @@ def initialize(server):
         camera.SetFocalPoint(0, 0, 0)
         camera.SetViewUp(0, 1, 0)
 
+        # Force the render to refresh immediately
+        view1.Render()
+        ctrl.view_update()
+        state.flush()
+
     def reset_camera_view2():
         camera = view2.GetActiveCamera()
         camera.SetPosition(1000, 0, 1000)
         camera.SetFocalPoint(0, 0, 0)
         camera.SetViewUp(0, 1, 0)
+
+        # Force the render to refresh immediately
+        view2.Render()
+        ctrl.view_update()
+        state.flush()
 
     def synchronize_cameras():
         if state.sync_status == "locked":
