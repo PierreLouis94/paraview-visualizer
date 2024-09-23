@@ -1,3 +1,5 @@
+import threading
+import time
 from trame.app import dev
 from trame.ui.vuetify import SinglePageWithDrawerLayout
 from trame.widgets import vuetify, paraview, simput, html
@@ -77,6 +79,9 @@ def initialize(server):
     state.show_second_view = False  # Initial state: Only one view is visible
     state.sync_status = "unlocked"
 
+    sync_interval = 100  # milliseconds
+    # sync_callback = server.add_periodic_callback(camera_sync_loop, sync_interval)
+
 
     # controller
     ctrl.on_server_reload.add(_reload)
@@ -99,19 +104,13 @@ def initialize(server):
         query=("search", ""),
     )
     ctrl.pxm_apply = simput_widget.apply
-    ctrl.pxm_reset = simput_widget.reset
+    ctrl.pxm_reset = simput_widget.reset  
 
-    def force_render(view):
-        def decorator(func):
-            def wrapper(*args, **kwargs):
-                result = func(*args, **kwargs)
-                view.Render()
-                simple.Render(view)
-                return result
-            return wrapper
-        return decorator
-    
+    # ----------------------------------------------------------------------------- 
+    # Functions
+    # -----------------------------------------------------------------------------
 
+    # Function to change the active view
     def change_active_view():
         if state.active_view  == "view1":
             state.active_view  = "view2"
@@ -120,6 +119,7 @@ def initialize(server):
             state.active_view = "view1"
             simple.SetActiveView(view1)
 
+    # Function to toggle the second view
     def toggle_second_view():
         state.show_second_view = not state.show_second_view
 
@@ -128,56 +128,56 @@ def initialize(server):
         simple.SetActiveView(state.current_view)
         ctrl.view_update()
 
-    #@force_render(view1)
+    # Function to reset the camera view for view1
     def reset_camera_view1():
         camera = view1.GetActiveCamera()
         camera.SetPosition(1000, 0, 1000)
         camera.SetFocalPoint(0, 0, 0)
         camera.SetViewUp(0, 1, 0)
 
-        # Force the render to refresh immediately
-        view1.Render()
-        ctrl.view_update()
-        state.flush()
-
+    # Function to reset the camera view for view2
     def reset_camera_view2():
         camera = view2.GetActiveCamera()
         camera.SetPosition(1000, 0, 1000)
         camera.SetFocalPoint(0, 0, 0)
         camera.SetViewUp(0, 1, 0)
 
-        # Force the render to refresh immediately
-        view2.Render()
-        ctrl.view_update()
-        state.flush()
-
     def synchronize_cameras():
-        if state.sync_status == "locked":
-            camera1 = view1.GetActiveCamera()
-            camera2 = view2.GetActiveCamera()
-            
-            camera2.SetPosition(camera1.GetPosition())
-            camera2.SetFocalPoint(camera1.GetFocalPoint())
-            camera2.SetViewUp(camera1.GetViewUp())
-            camera2.SetViewAngle(camera1.GetViewAngle())
-        else:
-            pass
-        
-        view2.Render()
-        simple.Render(view2)
+        try:
+            if state.sync_status == "locked":
+                camera1 = view1.GetActiveCamera()
+                camera2 = view2.GetActiveCamera()
+
+                camera2.SetPosition(camera1.GetPosition())
+                camera2.SetFocalPoint(camera1.GetFocalPoint())
+                camera2.SetViewUp(camera1.GetViewUp())
+                camera2.SetViewAngle(camera1.GetViewAngle())
+
+                simple.Render(view2)  # Render the updated view
+        except Exception as e:
+            print(f"Error during camera synchronization: {e}")
+    
 
     def change_sync_status():
         
         if state.sync_status == "unlocked":
             state.sync_status = "locked"
+            start_sync_thread()  # Start the synchronization thread
         else:
             state.sync_status = "unlocked"
-            
-            
 
-        # Ensure the state change is flushed to update the UI
-        state.dirty("sync_status")
-        state.flush()
+    # Function to start the synchronization thread
+    def start_sync_thread():
+        if not hasattr(server, 'sync_thread_running') or not server.sync_thread_running:
+            server.sync_thread_running = True
+            threading.Thread(target=sync_thread, daemon=True).start()
+
+    # Background thread function to synchronize cameras
+    def sync_thread():
+        while True:
+            if state.sync_status == "locked":
+                synchronize_cameras()
+            time.sleep(0.1)  # Wait for 100 ms        
 
 
     # Ensure the active view is updated
@@ -289,7 +289,7 @@ def initialize(server):
 
                 
                 with html.Div(style="flex: 1; height: 100%; border-right: 2px solid #ddd;"):  # border between views
-                    html_view = paraview.VtkRemoteLocalView(
+                    html_view1 = paraview.VtkRemoteLocalView(
                         view1,
                         interactive_ratio=("view1_interactive_ratio", 1),
                         interactive_quality=("view1_interactive_quality", 70),
@@ -297,14 +297,12 @@ def initialize(server):
                         namespace="view1",
                         style="flex: 1%; height: 100%;",
                     )
-                    ctrl.view_replace = html_view.replace_view
-                    ctrl.view_update = html_view.update
-                    ctrl.view_reset_camera = html_view.reset_camera
-                        
-
+                    ctrl.view1_replace = html_view1.replace_view
+                    ctrl.view1_update = html_view1.update
+                    ctrl.view1_reset_camera = html_view1.reset_camera
 
                 with html.Div(v_show=("show_second_view",), style="flex: 1; height: 100%;"):    
-                    html_view = paraview.VtkRemoteLocalView(
+                    html_view2 = paraview.VtkRemoteLocalView(
                         view2,
                         interactive_ratio=("view2_interactive_ratio", 1),
                         interactive_quality=("view2_interactive_quality", 70),
@@ -312,12 +310,14 @@ def initialize(server):
                         namespace="view2",
                         style="width: 100%; height: 100%;",
                     )
-                    ctrl.view_replace = html_view.replace_view
-                    ctrl.view_update = html_view.update
-                    ctrl.view_reset_camera = html_view.reset_camera
-                    
+                    ctrl.view2_replace = html_view2.replace_view
+                    ctrl.view2_update = html_view2.update
+                    ctrl.view2_reset_camera = html_view2.reset_camera
+                        
+                # Ensure both views update when the server is ready
+                ctrl.on_server_ready.add(ctrl.view1_update)
+                ctrl.on_server_ready.add(ctrl.view2_update)
 
-                ctrl.on_server_ready.add(ctrl.view_update)
 
 
         # -----------------------------------------------------------------------------
