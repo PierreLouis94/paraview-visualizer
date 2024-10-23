@@ -77,9 +77,9 @@ def initialize(server):
     state.active_view = "view1"
     state.current_view = view1 
     state.show_second_view = False  # Initial state: Only one view is visible
-    state.sync_status = "unlocked"
+    #state.sync_status = "unlocked"
 
-    sync_interval = 100  # milliseconds
+    #sync_interval = 100  # milliseconds
     # sync_callback = server.add_periodic_callback(camera_sync_loop, sync_interval)
 
 
@@ -154,48 +154,48 @@ def initialize(server):
         state.flush()
 
 
-    def synchronize_cameras():
-        try:
-            if state.sync_status == "locked":
-                camera1 = view1.GetActiveCamera()
-                camera2 = view2.GetActiveCamera()
+    #def synchronize_cameras():
+    #    try:
+    #        if state.sync_status == "locked":
+    #            camera1 = view1.GetActiveCamera()
+    #            camera2 = view2.GetActiveCamera()#
 
-                camera2.SetPosition(camera1.GetPosition())
-                camera2.SetFocalPoint(camera1.GetFocalPoint())
-                camera2.SetViewUp(camera1.GetViewUp())
-                camera2.SetViewAngle(camera1.GetViewAngle())
+    #            camera2.SetPosition(camera1.GetPosition())
+    #            camera2.SetFocalPoint(camera1.GetFocalPoint())
+    #            camera2.SetViewUp(camera1.GetViewUp())
+    #            camera2.SetViewAngle(camera1.GetViewAngle())
 
-                simple.Render(view2)  # Render the updated view
-        except Exception as e:
-            print(f"Error during camera synchronization: {e}")
+    #            simple.Render(view2)  # Render the updated view
+    #    except Exception as e:
+    #        print(f"Error during camera synchronization: {e}")
     
 
-    def change_sync_status():
+    #def change_sync_status():
         
-        if state.sync_status == "unlocked":
-            state.sync_status = "locked"
-            start_sync_thread()  # Start the synchronization thread
-        else:
-            state.sync_status = "unlocked"
+    #    if state.sync_status == "unlocked":
+    #        state.sync_status = "locked"
+    #        start_sync_thread()  # Start the synchronization thread
+    #    else:
+    #        state.sync_status = "unlocked"
 
     # Function to start the synchronization thread
-    def start_sync_thread():
-        if not hasattr(server, 'sync_thread_running') or not server.sync_thread_running:
-            server.sync_thread_running = True
-            threading.Thread(target=sync_thread, daemon=True).start()
+    #def start_sync_thread():
+    #    if not hasattr(server, 'sync_thread_running') or not server.sync_thread_running:
+    #        server.sync_thread_running = True
+    #        threading.Thread(target=sync_thread, daemon=True).start()
 
     # Background thread function to synchronize cameras
-    def sync_thread():
-        while True:
-            if state.sync_status == "locked":
-                synchronize_cameras()
-            time.sleep(0.1)  # Wait for 100 ms        
+    #def sync_thread():
+    #    while True:
+    #        if state.sync_status == "locked":
+    #            synchronize_cameras()
+    #       time.sleep(0.1)  # Wait for 100 ms        
 
 
     # Ensure the active view is updated
     ctrl.reset_camera_view1 = reset_camera_view1
     ctrl.reset_camera_view2 = reset_camera_view2
-    ctrl.change_sync_status = change_sync_status
+    #ctrl.change_sync_status = change_sync_status
     ctrl.change_active_view = change_active_view
     ctrl.update_active_view = update_active_view
 
@@ -254,20 +254,20 @@ def initialize(server):
             with vuetify.VBtn(click=reset_camera_view2, icon=True):
                 vuetify.VIcon("mdi-numeric-2-box-outline")
 
-            with vuetify.VBtn(click=change_sync_status, icon=True):
-                vuetify.VIcon("mdi-lock")
+            #with vuetify.VBtn(click=change_sync_status, icon=True):
+            #    vuetify.VIcon("mdi-lock")
 
-            vuetify.VTextField(
-                v_model=("sync_status",),
-                readonly=True,
-                dense=True,
-                hide_details=True,
-                outlined=True,
-                style="max-width: 100px;",
-            )
+            #vuetify.VTextField(
+            #    v_model=("sync_status",),
+            #    readonly=True,
+            #    dense=True,
+            #    hide_details=True,
+            #    outlined=True,
+            #    style="max-width: 100px;",
+            #)
 
-            with vuetify.VBtn(click=synchronize_cameras, icon=True):
-                vuetify.VIcon("mdi-sync")
+            #with vuetify.VBtn(click=synchronize_cameras, icon=True):
+            #    vuetify.VIcon("mdi-sync")
 
             vuetify.VSpacer()
 

@@ -1,0 +1,23 @@
+<v-col fluid style="position: relative" v-show="shouldShow">
+  <div style="position: absolute; right: 10px; top: -1px; z-index: 1;">
+    <v-btn v-if="help" icon x-small @click="showHelp = !showHelp">
+      <v-icon small>mdi-lifebuoy</v-icon>
+    </v-btn>
+  </div>
+
+  <v-row>
+    <v-col v-if="label" class="py-0">
+      <div class="text-caption text--secondary">{{ label }}</div>
+      <v-divider />
+      <div v-if="help && showHelp" class="text-caption text--secondary">
+        {{ help }}
+      </div>
+    </v-col>
+  </v-row>
+  <v-color-picker
+    class="mt-4"
+    v-model="model"
+    hide-mode-switch
+    canvas-height="45"
+  />
+</v-col>
