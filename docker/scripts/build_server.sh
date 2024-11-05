@@ -10,4 +10,4 @@ docker run --rm          \
     -e TRAME_CLIENT_TYPE=vue2 \
     -v "$DEPLOY_DIR:/deploy" \
     -v "$ROOT_DIR:/local-app"  \
-    kitware/trame:py3.10-glvnd build
+    kitware/trame:py3.10-glvnd-2024-10 build

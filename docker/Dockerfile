@@ -1,4 +1,7 @@
-FROM kitware/trame:py3.10-glvnd
+FROM kitware/trame:py3.10-glvnd-2024-10
+
+# Update package lists and upgrade libc-bin to the latest version
+RUN apt-get update && apt-get install -y libc-bin && apt-get upgrade -y libc-bin && apt-get clean
   
 RUN install -d -o trame-user -g trame-user /deploy
   
@@ -9,11 +12,6 @@ ENV TRAME_CLIENT_TYPE=vue2
   
 COPY --chown=trame-user:trame-user . /deploy
 
-# Upgrade setuptools to resolve vulnerabilities
-RUN python3.10 -m pip install --upgrade setuptools==70.0.0
-
-# Verify the installation of setuptools
-RUN python3.10 -m pip show setuptools
   
 RUN /opt/trame/entrypoint.sh build
 
