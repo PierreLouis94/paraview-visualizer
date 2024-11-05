@@ -5,3 +5,4 @@ trame-vtk
 trame-vuetify
 trame-components 
 trame-simput
+setuptools==70.0.0
