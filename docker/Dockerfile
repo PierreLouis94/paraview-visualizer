@@ -1,4 +1,4 @@
-FROM kitware/trame:py3.10-glvnd-2024-10
+FROM kitware/trame:py3.10-glvnd-2025-01
 
 # Update package lists and upgrade libc-bin to the latest version
 RUN apt-get update && apt-get install -y libc-bin && apt-get upgrade -y libc-bin && apt-get clean
