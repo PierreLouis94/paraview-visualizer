@@ -22,7 +22,7 @@ registry: ghcr.io
 
 username: PierreLouis94
 
-password: ${{ secrets.GITHUB_TOKEN }}
+password: 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
 
 - name: Build the hello-docker Docker image
 
